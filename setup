@@ -1,6 +1,15 @@
 #!/usr/bin/bash
 
-# Description: Links dotfiles to home directory.
+# Description: Links dotfiles to home directory and add config
+# to .bashrc if asked.
+
+backup_bashrc() {
+  if [[ -s "$HOME/.bashrc.backup" ]]; then
+    echo ".bashrc.backup exists, backup skipped."
+  else
+    cp "$HOME/.bashrc" "$HOME/.bashrc.backup" && echo ".bashrc --> .bashrc.backup"
+  fi
+}
 
 link_file() {
 	local src="$1"
@@ -9,8 +18,23 @@ link_file() {
 	echo "Linked $dest"
 }
 
-dotfiles_in_base=()
+dotfiles_in_base=("vimrc")
 dotfiles_in_config=()
+
+if [[ "$#" -gt 0 ]]; then
+  for option in "$@"; do
+    case "$option" in
+      kubectl)
+        backup_bashrc
+        cat ./kube_bashrc >> "$HOME/.bashrc" && echo "kubectl configs added to .bashrc!"
+        ;;
+      *)
+        echo "Invalid argument: $option" && exit 1
+        ;;
+    esac
+  done
+fi
+
 
 for file in "${dotfiles_in_base[@]}"; do
 	link_file "$HOME/dotfiles/$file" "$HOME/.$file"
@@ -21,3 +45,4 @@ for file in "${dotfiles_in_config[@]}"; do
 done
 
 echo "dotfiles linked!"
+
